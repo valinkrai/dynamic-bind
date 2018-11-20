@@ -5,15 +5,15 @@ DOMAIN='thegrid.trenton.io'
 A_TO_MATCH='zuse.trenton.io'
 DNS_TO_USE='1.1.1.1'
 ZONE_FILE="/var/named/${DOMAIN}"
-BACKUP_DIR='/var/named/zone_backups/'
+BACKUP_DIR='/var/named/zone_backups'
 KEYS_DIR='/var/named/keys/'
 ACTUAL_IPADDRESS=$(dig @${DNS_TO_USE} +short ${A_TO_MATCH})
 
-echo $(grep -v "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}")
-grep -vq "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}"
+echo $(grep "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}")
+grep -q "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}"
 echo $?
 
-if grep -vq "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}"; then
+if ! grep -q "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}"; then
   ## Only mess with these if there's actually a new IP
   CURRENT_SERIAL="$(grep \;serial ${ZONE_FILE} |  grep -Po [0-9]{10})"
   CURRENT_SERIAL_DATE="$(echo "${CURRENT_SERIAL}" | head -c 8)"
@@ -44,6 +44,6 @@ if grep -vq "${ACTUAL_IPADDRESS}\;DYN" "${ZONE_FILE}"; then
     dnssec-signzone -S -K "${KEYS_DIR}" -g -a -r /dev/urandom -o "${DOMAIN}" "${ZONE_FILE}"
     /sbin/rndc reload
   else
-    mv "${BACKUP_DIR}.${ZONE_FILE}.${CURRENT_SERIAL}.bak" "${ZONE_FILE}"
+    mv "${BACKUP_DIR}/${ZONE_FILE}.${CURRENT_SERIAL}.bak" "${ZONE_FILE}"
   fi
 fi
